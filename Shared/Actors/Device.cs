@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Akka.Persistence;
+using Shared.Commands;
+
 
 namespace Shared.Actors
 {
@@ -11,10 +13,13 @@ namespace Shared.Actors
     {
 
         string serialNumber;
+        DeviceData data;
 
         public Device(string serialNumber)
         {
             this.serialNumber = serialNumber;
+
+            data = new DeviceData();
         }
 
         public override string PersistenceId
@@ -24,13 +29,41 @@ namespace Shared.Actors
 
         protected override bool ReceiveCommand(object message)
         {
-            
-            throw new NotImplementedException();
+            if (message is ActivateDevice)
+            {
+                Persist((ActivateDevice)message, m => HandleActivateDevice(m));
+                               
+            }
+
+
+            return true;
         }
 
         protected override bool ReceiveRecover(object message)
         {
-            throw new NotImplementedException();
+            Console.WriteLine("Restoring data");
+
+            if (message is ActivateDevice)
+            {
+                HandleActivateDevice((ActivateDevice)message);
+
+            }
+
+            return true;
+        }
+
+        private void HandleActivateDevice(ActivateDevice message)
+        {
+            data.GeneralState = DeviceState.Active;
+            
         }
     }
+
+    public class DeviceData
+    {
+        public DeviceState GeneralState{get;set;}
+    
+    }
+
+    public enum DeviceState { Active, TurnedOn, TurnedOff }
 }

@@ -7,7 +7,11 @@ using System.Threading.Tasks;
 
 namespace Shared.Actors
 {
-    public class SwitchProcess : PersistentActor
+    public class SwitchProcess : ReceivePersistentActor
     {
+        public override string PersistenceId
+        {
+            get { throw new NotImplementedException(); }
+        }
     }
 }
