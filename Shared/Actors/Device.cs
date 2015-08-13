@@ -24,7 +24,7 @@ namespace Shared.Actors
 
         public override string PersistenceId
         {
-            get { return serialNumber; }
+            get { return this.GetType().ToString()+" - "+serialNumber; }
         }
 
         protected override bool ReceiveCommand(object message)
