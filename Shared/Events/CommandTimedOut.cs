@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Shared.Commands
+namespace Shared.Events
 {
-    public class ActivateDevice : Command
+    public class CommandTimedOut : Event
     {
-        public string SerialNumber { get; set; }
     }
 }

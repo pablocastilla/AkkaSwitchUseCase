@@ -3,23 +3,32 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Akka.Actor;
 using Akka.Persistence;
 using Shared.Commands;
+using Shared.Events;
 
 
 namespace Shared.Actors
 {
     public class Device : AtLeastOnceDeliveryActor 
     {
+        public enum DeviceState { Inactive, Active, TurnedOn, TurnedOff }
+
 
         string serialNumber;
-        DeviceData data;
+        DeviceState generalState;
 
+        bool switchOnInProgress;
+        Guid? switchOnInProgressGuid;
+     
         public Device(string serialNumber)
         {
             this.serialNumber = serialNumber;
 
-            data = new DeviceData();
+            generalState = DeviceState.Inactive;
+
+           
         }
 
         public override string PersistenceId
@@ -35,9 +44,54 @@ namespace Shared.Actors
                                
             }
 
+            if (message is SwitchOn)
+            {
+                Persist((SwitchOn)message, m => HandleSwitchOnDevice(m));
+
+            }
+
+
+            if (message is CommandTimedOut)
+            {
+                Persist((CommandTimedOut)message, m => {
+
+                    switchOnInProgress = false;
+                    switchOnInProgressGuid = null;
+                });
+
+               
+            }
 
             return true;
         }
+
+        #region Commands
+
+        private void HandleActivateDevice(ActivateDevice message)
+        {
+            generalState = DeviceState.Active;
+
+        }
+
+        private object HandleSwitchOnDevice(SwitchOn m)
+        {
+            var child = Context.Child(m.CommandID.ToString());
+
+            if (child.Equals(ActorRefs.Nobody)) //child doesn't exist
+            {
+                var switchOnActor = Context.ActorOf(Props.Create(() => new SwitchOnProcess(m.CommandID, Context.Self)), m.CommandID.ToString());
+
+                switchOnActor.Tell(m);
+
+            }
+            return child;         
+
+            
+        }
+
+        #endregion
+
+        #region Recover
 
         protected override bool ReceiveRecover(object message)
         {
@@ -49,21 +103,26 @@ namespace Shared.Actors
 
             }
 
+            if (message is SwitchOn)
+            {
+                switchOnInProgress = true;
+                switchOnInProgressGuid = ((SwitchOn)message).CommandID;
+            }
+
+            if (message is CommandTimedOut)
+            {
+                switchOnInProgress = false;
+                switchOnInProgressGuid = null;
+            }
+
             return true;
         }
 
-        private void HandleActivateDevice(ActivateDevice message)
-        {
-            data.GeneralState = DeviceState.Active;
-            
-        }
+        #endregion
+
     }
 
-    public class DeviceData
-    {
-        public DeviceState GeneralState{get;set;}
+ 
+
     
-    }
-
-    public enum DeviceState { Active, TurnedOn, TurnedOff }
 }

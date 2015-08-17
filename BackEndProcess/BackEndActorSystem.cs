@@ -25,9 +25,11 @@ namespace BackEndProcess
             SqlServerPersistence.Init(actorSystem);
 
             d1 = actorSystem.ActorOf(
-                    Props.Create(() => new Device("asdf2")));
+                    Props.Create(() => new Device("asdf5")));
 
             d1.Tell(new ActivateDevice());
+
+            d1.Tell(new SwitchOn() { CommandID = Guid.NewGuid() });
       
             return true;
         }

@@ -61,13 +61,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Actors\Device.cs" />
-    <Compile Include="Actors\SwitchProcess.cs" />
+    <Compile Include="Actors\SwitchOnProcess.cs" />
     <Compile Include="Commands\ActivateDevice.cs" />
+    <Compile Include="Commands\Command.cs" />
+    <Compile Include="Commands\SwitchOn.cs" />
+    <Compile Include="Events\CommandTimedOut.cs" />
+    <Compile Include="Events\Event.cs" />
+    <Compile Include="GeneralMessageData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Events\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="protos\google\protobuf\csharp_options.proto" />

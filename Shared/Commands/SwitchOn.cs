@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace Shared.Commands
 {
-    public class ActivateDevice : Command
+    public class SwitchOn : Command
     {
-        public string SerialNumber { get; set; }
+
     }
 }
