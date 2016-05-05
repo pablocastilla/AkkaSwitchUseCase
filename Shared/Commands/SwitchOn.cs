@@ -8,6 +8,9 @@ namespace Shared.Commands
 {
     public class SwitchOn : Command
     {
-
+        public SwitchOn()
+        {
+            CommandId = Constants.Commands.SwitchOn;
+        }
     }
 }

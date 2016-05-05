@@ -61,10 +61,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Actors\Device.cs" />
-    <Compile Include="Actors\SwitchOnProcess.cs" />
+    <Compile Include="Actors\ConfigurationSetter.cs" />
+    <Compile Include="Actors\DeviceSwitch.cs" />
     <Compile Include="Commands\ActivateDevice.cs" />
     <Compile Include="Commands\Command.cs" />
     <Compile Include="Commands\SwitchOn.cs" />
+    <Compile Include="Constants\Commands.cs" />
     <Compile Include="Events\CommandTimedOut.cs" />
     <Compile Include="Events\Event.cs" />
     <Compile Include="GeneralMessageData.cs" />

@@ -8,5 +8,6 @@ namespace Shared.Events
 {
     public class Event: GeneralMessageData
     {
+        public Guid CommandRequestID { get; set; }
     }
 }

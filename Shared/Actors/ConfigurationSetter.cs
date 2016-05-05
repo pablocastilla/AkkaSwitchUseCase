@@ -10,7 +10,7 @@ using Shared.Events;
 
 namespace Shared.Actors
 {
-    public class SwitchOnProcess : ReceivePersistentActor
+    public class ConfigurationSetter : ReceivePersistentActor
     {
         public enum SwitchOnState { Initiated, CommandLaunched, CommandInDevice, CommandExecutedInDevice, CommandTimedOut, CommandOk, CommandKo }
         
@@ -20,7 +20,7 @@ namespace Shared.Actors
         int retries;
         SwitchOn mainCommand;
 
-        public SwitchOnProcess(Guid commandID, IActorRef device)
+        public ConfigurationSetter(Guid commandRequestID, IActorRef device)
         {
             this.commandID = commandID;
             this.device = device;
@@ -43,7 +43,7 @@ namespace Shared.Actors
 
         private void ReadyCommands()
         {
-            Command<SwitchOn>(message => Persist(message, LaunchCommand));
+            Command<Command>(message => Persist(message, LaunchCommand));
 
 
             Command<ReceiveTimeout>(timeout => Persist(timeout, ProcessTimeOut));
@@ -51,7 +51,7 @@ namespace Shared.Actors
 
         private void ReadyRecovers()
         {
-            Recover<SwitchOn>(message => RecoverLaunchCommand(message));
+            Recover<Command>(message => RecoverLaunchCommand(message));
 
             Recover<ReceiveTimeout>(message => RecoverTimeOutReceived(message));
         }
@@ -62,16 +62,10 @@ namespace Shared.Actors
         #region Commands
 
 
-        private void LaunchCommand(SwitchOn command)
-        {                       
-            //save main command for retries
-            mainCommand = command;
+        private void LaunchCommand(Command command)
+        {
 
-            //Set timeout
-            SetReceiveTimeout(TimeSpan.FromSeconds(5));
-
-            //Launch command to frontend actors
-            
+     
 
             //Set state
             state = SwitchOnState.CommandLaunched;
@@ -81,7 +75,7 @@ namespace Shared.Actors
         {
             if (retries < 3)
             {
-                LaunchCommand(mainCommand);
+             //   LaunchCommand(mainCommand);
 
                 retries++;
 
@@ -99,7 +93,7 @@ namespace Shared.Actors
 
         #region Recover
 
-        private bool RecoverLaunchCommand(SwitchOn message)
+        private bool RecoverLaunchCommand(Command message)
         {
             state = SwitchOnState.CommandLaunched;
 
