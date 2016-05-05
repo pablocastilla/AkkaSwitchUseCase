@@ -8,7 +8,7 @@ namespace Shared
 {
     public class GeneralMessageData
     {
-        public Guid CommandID { get; set; }
+        public Guid CommandRequestID { get; set; }
 
         public DateTime SendTimeStamp { get; set; }
         public DateTime ExecutionTimeStamp { get; set; }

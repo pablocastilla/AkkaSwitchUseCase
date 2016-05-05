@@ -45,6 +45,7 @@ namespace Shared.Actors
         {
             Command<SwitchOn>(message => Persist(message, LaunchCommand));
 
+
             Command<ReceiveTimeout>(timeout => Persist(timeout, ProcessTimeOut));
         }
 
@@ -88,7 +89,7 @@ namespace Shared.Actors
             else
             {
                 SetReceiveTimeout(null);
-                device.Tell(new CommandTimedOut() { CommandID = commandID });
+                device.Tell(new CommandTimedOut() { CommandRequestID = commandID });
             }
         }
 

@@ -11,7 +11,7 @@ using Shared.Events;
 
 namespace Shared.Actors
 {
-    public class Device : AtLeastOnceDeliveryActor 
+    public class Device : ReceivePersistentActor
     {
         public enum DeviceState { Inactive, Active, TurnedOn, TurnedOff }
 
@@ -21,14 +21,79 @@ namespace Shared.Actors
 
         bool switchOnInProgress;
         Guid? switchOnInProgressGuid;
+        IActorRef currentCommandActor;
      
         public Device(string serialNumber)
         {
             this.serialNumber = serialNumber;
 
             generalState = DeviceState.Inactive;
+            switchOnInProgress = false;
 
-           
+            Command<ActivateDevice>(
+                    m => Persist(m, m2=>HandleActivateDevice(m2))
+                    );
+
+            Recover<ActivateDevice>(message =>
+                    {
+                    HandleActivateDevice(message);
+                    });
+
+            Command<SwitchOn>(
+                    m => Persist(m, m2 => HandleSwitchOnDevice(m2))
+                    );
+
+            Recover<SwitchOn>(message =>
+                    {
+                        var m = message as SwitchOn;
+
+                        switchOnInProgress = true;
+                        switchOnInProgressGuid = message.CommandRequestID;
+
+                        var timeout = (m.ExecutionTimeStamp - DateTime.Now).TotalSeconds + m.ProcessTimeOutInSeconds;
+                        if (timeout > 0)
+                        {
+                            SetReceiveTimeout(TimeSpan.FromSeconds(timeout));
+                        }
+                        else
+                        {
+                            switchOnInProgress = false;
+                            switchOnInProgressGuid = null;
+                            SetReceiveTimeout(null);
+                        }
+                    }
+                    );
+
+            Command<CommandTimedOut>(
+                    m => Persist(m, m2=>{ 
+                        switchOnInProgress = false;
+                        switchOnInProgressGuid = null;
+                        SetReceiveTimeout(null);            
+                    }));
+
+            Recover<CommandTimedOut>(
+                    m =>  {
+                        switchOnInProgress = false;
+                        switchOnInProgressGuid = null;
+                        SetReceiveTimeout(null);
+                    });
+                     
+
+            Command<ReceiveTimeout>(
+                    m => Persist(m, m2 => {
+                        switchOnInProgress = false;
+                        switchOnInProgressGuid = null;
+                        SetReceiveTimeout(null);
+                    }));
+
+            Recover<ReceiveTimeout>(
+                    m => {
+                        switchOnInProgress = false;
+                        switchOnInProgressGuid = null;
+                        SetReceiveTimeout(null);
+                    });
+
+
         }
 
         public override string PersistenceId
@@ -36,34 +101,7 @@ namespace Shared.Actors
             get { return this.GetType().ToString()+" - "+serialNumber; }
         }
 
-        protected override bool ReceiveCommand(object message)
-        {
-            if (message is ActivateDevice)
-            {
-                Persist((ActivateDevice)message, m => HandleActivateDevice(m));
-                               
-            }
-
-            if (message is SwitchOn)
-            {
-                Persist((SwitchOn)message, m => HandleSwitchOnDevice(m));
-
-            }
-
-
-            if (message is CommandTimedOut)
-            {
-                Persist((CommandTimedOut)message, m => {
-
-                    switchOnInProgress = false;
-                    switchOnInProgressGuid = null;
-                });
-
-               
-            }
-
-            return true;
-        }
+     
 
         #region Commands
 
@@ -73,52 +111,34 @@ namespace Shared.Actors
 
         }
 
-        private object HandleSwitchOnDevice(SwitchOn m)
+        private void HandleSwitchOnDevice(SwitchOn m)
         {
-            var child = Context.Child(m.CommandID.ToString());
+            if (switchOnInProgress)
+                return;
+
+            var child = Context.Child(m.CommandRequestID.ToString());
 
             if (child.Equals(ActorRefs.Nobody)) //child doesn't exist
             {
-                var switchOnActor = Context.ActorOf(Props.Create(() => new SwitchOnProcess(m.CommandID, Context.Self)), m.CommandID.ToString());
+                currentCommandActor = Context.ActorOf(Props.Create(() => new SwitchOnProcess(m.CommandRequestID, Context.Self)), m.CommandRequestID.ToString());
 
-                switchOnActor.Tell(m);
+                if(!IsRecovering)
+                    currentCommandActor.Tell(m);
 
             }
-            return child;         
 
-            
+            var timeout = (m.ExecutionTimeStamp - DateTime.Now).TotalSeconds + m.ProcessTimeOutInSeconds;
+            if (timeout > 0)
+            {
+                SetReceiveTimeout(TimeSpan.FromSeconds(timeout));
+            }
+
+
         }
 
         #endregion
 
-        #region Recover
-
-        protected override bool ReceiveRecover(object message)
-        {
-            Console.WriteLine("Restoring data");
-
-            if (message is ActivateDevice)
-            {
-                HandleActivateDevice((ActivateDevice)message);
-
-            }
-
-            if (message is SwitchOn)
-            {
-                switchOnInProgress = true;
-                switchOnInProgressGuid = ((SwitchOn)message).CommandID;
-            }
-
-            if (message is CommandTimedOut)
-            {
-                switchOnInProgress = false;
-                switchOnInProgressGuid = null;
-            }
-
-            return true;
-        }
-
-        #endregion
+       
 
     }
 

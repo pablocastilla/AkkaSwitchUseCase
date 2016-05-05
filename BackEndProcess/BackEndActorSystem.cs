@@ -17,6 +17,7 @@ namespace BackEndProcess
         private ActorSystem actorSystem;
 
         private IActorRef d1;
+        private IActorRef d2;
 
         public bool Start(HostControl hostControl)
         {
@@ -25,12 +26,12 @@ namespace BackEndProcess
             SqlServerPersistence.Init(actorSystem);
 
             d1 = actorSystem.ActorOf(
-                    Props.Create(() => new Device("asdf5")));
+                    Props.Create(() => new Device("PCV1")));
 
             d1.Tell(new ActivateDevice());
 
-            d1.Tell(new SwitchOn() { CommandID = Guid.NewGuid() });
-      
+            d1.Tell(new SwitchOn() { CommandRequestID = Guid.NewGuid(),ExecutionTimeStamp=DateTime.Now,ProcessTimeOutInSeconds=30 });
+
             return true;
         }
 
